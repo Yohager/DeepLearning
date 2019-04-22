@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 import random
 import matplotlib.pyplot as plt
+import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 
@@ -66,9 +67,9 @@ class BackPropagation_NN(object):
         for weight,bia in zip(self.weights,self.bias):
             #print(weight.shape)
             z_input = np.dot(weight,a_input).reshape(weight.shape[0],1) + bia
-            print('带权输入的尺寸：',z_input.shape,bia.shape)
+            #print('带权输入的尺寸：',z_input.shape,bia.shape)
             a_input = self.activation_function(z_input)
-            print('激活函数得到的输出：',a_input.shape)
+            #print('激活函数得到的输出：',a_input.shape)
             z_list.append(z_input)
             a_list.append(a_input)
         #print('test_result:',a_list[2].shape)
@@ -77,11 +78,11 @@ class BackPropagation_NN(object):
         #print(input_data_y.shape)
         #进行后向传播的过程，从输出结果层进行倒退，一层一层求解梯度值
         #首先计算最后一层的梯度：a_list[-1]表示为输出层得到的数值：10*1，input_data_y为原始数据的结果：10*1
-        print('误差值：',(a_list[-1] - input_data_y).shape)
-        print('激活函数的导数：',self.activation_function_derivative(z_list[-1]).shape)
+        #print('误差值：',(a_list[-1] - input_data_y).shape)
+        #print('激活函数的导数：',self.activation_function_derivative(z_list[-1]).shape)
         last_layer_error_derivative = (a_list[-1] - input_data_y) * self.activation_function_derivative(z_list[-1])
         #last_layer_error_derivative = sum(a_list[-1] - input_data_y.reshape(len(input_data_y),1))
-        print('last_layer_error_shape:',last_layer_error_derivative.shape)
+        #print('last_layer_error_shape:',last_layer_error_derivative.shape)
         #分析这里的结果：以本数据为例，最后一层10个神经元，有10*1个激活值，与input_data_y做差乘以2为loss关于最后一层激活值得导数，再乘以激活函数的导数
         delta_biases[-1] = last_layer_error_derivative
         #对于最后的一层（10*1）计算损失函数对每个权重和偏置的导数：对于权重：误差 * 该层的带权输入（上一层的激活输出）
@@ -104,7 +105,7 @@ class BackPropagation_NN(object):
             #print(a_list[-layer-1].shape)
             delta_weights[-layer] = np.dot(last_layer_error_derivative,np.array(a_list[-layer-1]).T)
             #last_layer_error:15*1;a_list[-layer-1]:784*1 => 第一层的权重矩阵：784*15
-        print('偏导矩阵：',delta_weights[0].shape,delta_weights[1].shape)
+        #print('偏导矩阵：',delta_weights[0].shape,delta_weights[1].shape)
         return delta_weights,delta_biases
     #更新函数
     def update_gradient(self,mini_batch,learning_rate):
@@ -136,15 +137,30 @@ class BackPropagation_NN(object):
         training_data = list(zip(training_x,training_labels))
         n = len(training_data)
         print(n)
+        start = 0
+        end = 0
         #print(len(training_data[0]))
         random.shuffle(training_data)
         for j in range(iterations):
+            start = time.time()
+            #print('迭代次数：%d次'%(j+1))
+            print('第%d次和第%d次迭代之间的时间间隔：%d'%(j+1,j+2,start-end))
             for k in range(0,n,mini_batch_size):
                 mini_batches.append(training_data[k:k+mini_batch_size])
-            print('总的batch数量：',len(mini_batches))
+            #print('总的batch数量：',len(mini_batches))
             for mini_batch in mini_batches:
                 self.update_gradient(mini_batch,learning_rate)
+            end = time.time()
 
+    #进行测试集的测试
+    def test_accuracy(self,test_x,test_y):
+        test_data = list(zip(test_x,test_y))
+        test_result = [(np.argmax(self.feedforward(x)),y) for (x,y) in test_data]
+        counter = 0
+        for (pred,init) in test_result:
+            if pred == init:
+                counter += 1
+        return counter / len(test_data)
 
 if __name__ == '__main__':
     network_test = BackPropagation_NN([784,15,10])
@@ -152,15 +168,15 @@ if __name__ == '__main__':
     #data = input_data.read_data_sets("MNIST_data", one_hot=True)
     #print(data)
     train_x, train_l, test_x, test_l = network_test.load_data('MNIST_data')
+    test_l_1 = [np.argmax(y) for y in test_l]
+    print(test_l_1[0:10])
     print('训练数据的尺寸：',train_x.shape)
     print('训练标签的尺寸：',train_l.shape)
-    test_x = (np.array(train_x[0]).T).reshape(len(train_x[0]),1)
+    #test_x = (np.array(train_x[0]).T).reshape(len(train_x[0]),1)
     #print(test_x.shape)
-    test_y = train_l[0].reshape(len(train_l[0]),1)
-    #print(max(test_x))
-    #print(result.shape)
-    print(test_y)
-    #delta_w,delta_b = network_test.back_propagation(test_x,test_y)
-    #network_test.mini_batch_gradient_descent(train_x,train_l,10,100,0.005,0.01)
+    #test_y = train_l[0].reshape(len(train_l[0]),1)
+    network_test.mini_batch_gradient_descent(train_x,train_l,20,50,0.005,0.1)
     #result = network_test.feedforward(test_x)
     #print(result)
+    result = network_test.test_accuracy(test_x,test_l_1)
+    print('BP network accuracy is:',result)
