@@ -58,10 +58,10 @@ class BackPropagation_NN(object):
             delta_biases.append(np.zeros(j.shape))
         #print(delta_biases[0].shape)
         #这里的z_list用于存放带权输入，a_list用于存放每一层的激活值
-        a_input = input_data_x #中间变量进行运算
+        a_input = input_data_x.reshape(len(input_data_x),1) #中间变量进行运算
         z_list = []
         #这个地方之所以把输入层的值也放入激活输出中是因为在求第2层的梯度的时候需要使用输入层的数据
-        a_list = [a_input.reshape(len(a_input),1)]
+        a_list = [a_input]
         for weight,bia in zip(self.weights,self.bias):
             #print(weight.shape)
             z_input = np.dot(weight,a_input).reshape(weight.shape[0],1) + bia
