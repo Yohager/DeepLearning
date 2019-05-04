@@ -37,6 +37,24 @@ class BackPropagation_NN(object):
 
     def activation_function_derivative(self,H_x):
         return self.activation_function(H_x) * (1 - self.activation_function(H_x))
+
+    def RELU_forward(self,weighted_input):
+        return_value = np.zeros((len(weighted_input),1))
+        for i in range(len(weighted_input)):
+            if i > 0:
+                return_value[i] = weighted_input[i]
+            else:
+                return_value[i] = 0.1 *weighted_input[i]
+        return return_value
+
+    def RELU_backward(self,output_value):
+        return_value = np.zeros((len(output_value),1))
+        for i in range(len(output_value)):
+            if output_value[i] > 0:
+                return_value[i] = 1
+            else:
+                return_value[i] = 0.1
+        return return_value
     #前向传播
     #验证结果的时候使用
     def feedforward(self,input_data):
@@ -131,7 +149,7 @@ class BackPropagation_NN(object):
         self.bias = [bia -(learning_rate/len(mini_batch)) * bia_total for bia,bia_total in zip(self.bias,delta_biases)]
 
     #实现小批量随机梯度下降法
-    def mini_batch_gradient_descent(self,training_x,training_labels,iterations,mini_batch_size,epsilon,learning_rate):
+    def mini_batch_gradient_descent(self,training_x,training_labels,iterations,mini_batch_size,epsilon,learning_rate,test_x,test_label):
         #小批量随机梯度MSGD：首先给出batch的size，然后打乱数据，选择从第一个数据到到1+size为一个batch……
         mini_batches = []
         training_data = list(zip(training_x,training_labels))
@@ -142,15 +160,17 @@ class BackPropagation_NN(object):
         #print(len(training_data[0]))
         random.shuffle(training_data)
         for j in range(iterations):
-            start = time.time()
+            #start = time.time()
             #print('迭代次数：%d次'%(j+1))
-            print('第%d次和第%d次迭代之间的时间间隔：%d'%(j+1,j+2,start-end))
+            print('第%d次迭代'%(j+1))
             for k in range(0,n,mini_batch_size):
                 mini_batches.append(training_data[k:k+mini_batch_size])
             #print('总的batch数量：',len(mini_batches))
             for mini_batch in mini_batches:
                 self.update_gradient(mini_batch,learning_rate)
-            end = time.time()
+            #end = time.time()
+            accuracy = self.test_accuracy(test_x,test_label)
+            print('BP network accuracy is:', accuracy)
 
     #进行测试集的测试
     def test_accuracy(self,test_x,test_y):
@@ -175,8 +195,7 @@ if __name__ == '__main__':
     #test_x = (np.array(train_x[0]).T).reshape(len(train_x[0]),1)
     #print(test_x.shape)
     #test_y = train_l[0].reshape(len(train_l[0]),1)
-    network_test.mini_batch_gradient_descent(train_x,train_l,20,50,0.005,0.1)
+    network_test.mini_batch_gradient_descent(train_x,train_l,100,100,3,0.1,test_x,test_l_1)
     #result = network_test.feedforward(test_x)
     #print(result)
-    result = network_test.test_accuracy(test_x,test_l_1)
-    print('BP network accuracy is:',result)
+
